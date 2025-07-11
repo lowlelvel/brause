@@ -1,58 +1,60 @@
 name: mean
+
 on:
   push:
     paths:
       - ".github/workflows/workflow.yml"
-      - "mean/scale.py"
       - "mean/tour"
+      - "mean/tone"
       - "mean/dol"
+      - "mean/scale.py"
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
+    # 1 – checkout code
     - uses: actions/checkout@v2
+
+    # 2 – set up Python
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.x'
-      
+
+    # 3 – install deps
     - name: Install dependencies
       run: |
-          python -m pip install --upgrade pip
+        python -m pip install --upgrade pip
 
+    # 4 – generate the raw output
     - name: Run script to create new configs
       run: |
-          python mean/scale.py
-          
-    - name: Check for new changes
-      id: changes
-      run: |
-            git diff --quiet && echo 'No changes' || echo '::set-output name=changed::true'   
-    - name: Commit and Push Changes
-      if: steps.changes.outputs.changed == 'true'   
-      run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          timestamp=$(TZ='Asia/Tehran' date)
-          git commit -m "✅Updated on ${timestamp}"
-          git push
+        python mean/scale.py
 
+    # 5 – make Git completely ignore the raw output file
+    - name: Ignore raw output locally
+      run: |
+        echo 'mean/hover' >> .git/info/exclude
+
+    # 6 – convert the raw output to base64
     - name: Convert output to base64
       run: |
-          content=$(cat mean/hover | base64 | tr -d '\n')
-            echo "$content" > mean/scrb
-            
-    - name: Check for output Base64 Changes
-      id: changesS
+        content=$(base64 < mean/hover | tr -d '\n')
+        echo "$content" > mean/scrb
+
+    # 7 – stage ONLY the base64 file and push if it changed
+    - name: Commit and Push output64
       run: |
-            git diff --quiet && echo 'No changes' || echo '::set-output name=changed::true'   
-    - name: Commit and Push Renamed Base64
-      if: steps.changesS.outputs.changed == 'true'   
-      run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add mean/scrb
+        git config --local user.email "action@github.com"
+        git config --local user.name  "GitHub Action"
+        git add -f mean/scrb           # -f forces add even if ignored
+        if git diff --cached --quiet; then   # nothing new
+          echo "No changes to commit"
+        else
           timestamp=$(TZ='Asia/Tehran' date)
           git commit -m "✅Updated on ${timestamp}"
           git push
+        fi
