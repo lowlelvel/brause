@@ -1,3 +1,4 @@
+# mean/scale.py
 import base64
 import json
 
@@ -5,27 +6,32 @@ import json
 proxy_counter = 0
 
 def read_lines_maybe_base64(file_path):
-    """Read a file that may be plain text or base64‑encoded.
-    Returns a list of non‑empty, stripped lines."""
+    """Read a file that may be plain text or base64-encoded.
+    Returns a list of non-empty, stripped lines."""
     with open(file_path, 'rb') as f:
         data = f.read()
 
     # Attempt to treat the whole file as base64
     try:
-        decoded_bytes = base64.b64decode(data, validate=True)
+        # Removed validate=True so that newlines/spaces won't break it
+        decoded_bytes = base64.b64decode(data)
         try:
             decoded_text = decoded_bytes.decode('utf-8')
             # Basic heuristic: proxy configs should contain "://"
             if '://' in decoded_text:
-                return [line.strip() for line in decoded_text.splitlines() if line.strip()]
+                lines = [line.strip() for line in decoded_text.splitlines() if line.strip()]
+                print(f"[DEBUG] {file_path} treated as base64; parsed {len(lines)} lines")
+                return lines
         except UnicodeDecodeError:
-            pass  # Fall through to plain‑text handling
+            pass  # Fall through to plain-text handling
     except Exception:
         pass  # Not valid base64, treat as plain text
 
-    # Fallback: treat as plain UTF‑8 text
+    # Fallback: treat as plain UTF-8 text
     plain_text = data.decode('utf-8')
-    return [line.strip() for line in plain_text.splitlines() if line.strip()]
+    lines = [line.strip() for line in plain_text.splitlines() if line.strip()]
+    print(f"[DEBUG] {file_path} treated as plain text; parsed {len(lines)} lines")
+    return lines
 
 def rename_vmess_address(proxy, new_address):
     global proxy_counter
@@ -109,8 +115,8 @@ def process_proxies(input_file, ips_file, output_file):
                     out_f.write(renamed_proxy + '\n')
 
 # Example usage
-input_file = 'mean/tour'
-ips_file = 'mean/tone'
+input_file  = 'mean/tour'
+ips_file    = 'mean/tone'
 output_file = 'mean/hover'
 
 process_proxies(input_file, ips_file, output_file)
