@@ -120,7 +120,7 @@ def rename_trojan_address(proxy, new_address, new_port):
         # Keep the rest of the URI intact, only replace host:port
         renamed_hostinfo = f"{new_address}:{new_port}{suffix}"
         remarks = new_address  # Keep old behavior as close as possible
-        renamed_proxy = userinfo + '@' + renamed_hostinfo + '#' + remarks
+        renamed_proxy = userinfo + '@' + renamed_hostinfo + '-' + remarks
 
         proxy_counter += 1
         print("Renamed Trojan proxy:", renamed_proxy)  # Debugging
